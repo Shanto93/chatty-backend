@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  email         String    @unique
+  username      String    @unique
+  password      String
+  displayName   String
+  avatarUrl     String?
+  statusMessage String?
+  role          Role      @default(USER)
+  isOnline      Boolean   @default(false)
+  lastSeen      DateTime? @default(now()) 
+
+  createdRooms Room[]       @relation("CreatedRooms")
+  memberships  Membership[]
+  messages     Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Room {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String  @unique
+  description String?
+  isPrivate   Boolean @default(false)
+  avatarUrl   String?
+  createdById String  @db.ObjectId
+  createdBy   User    @relation("CreatedRooms", fields: [createdById], references: [id], onDelete: Cascade)
+
+  memberships Membership[]
+  messages    Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("rooms")
+}
+
+model Membership {
+  id     String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId String   @db.ObjectId
+  roomId String   @db.ObjectId
+  role   RoomRole @default(MEMBER)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([userId, roomId])
+  @@map("memberships")
+}
+
+model Message {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  content    String
+  roomId     String @db.ObjectId
+  senderId   String @db.ObjectId
+  attachment Json?
+
+  room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roomId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum RoomRole {
+  CREATOR
+  ADMIN
+  MEMBER
+}
