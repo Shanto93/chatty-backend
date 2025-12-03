@@ -141,7 +141,7 @@ import roomsRoutes from "./modules/rooms/rooms.routes";
 import messagesRoutes from "./modules/messages/messages.routes";
 import adminRoutes from "./modules/admin/admin.routes";
 import { initializeSocketIO } from "./sockets/index";
-import { connectRedis, disconnectRedis } from "./redis/client";
+import { connectRedis, disconnectRedis } from "@redis/client";
 
 const app = express();
 const httpServer = createServer(app);
