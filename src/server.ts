@@ -133,7 +133,7 @@ import helmet from "helmet";
 import { createServer } from "http";
 import prisma from "@db/prisma";
 import { errorHandler } from "@middleware/error.middleware";
-import redisClient, { connectRedis, disconnectRedis } from "@redis/client";
+import redisClient from "@redis/client";
 
 import authRoutes from "./modules/auth/auth.routes";
 import usersRoutes from "./modules/users/users.routes";
@@ -141,6 +141,7 @@ import roomsRoutes from "./modules/rooms/rooms.routes";
 import messagesRoutes from "./modules/messages/messages.routes";
 import adminRoutes from "./modules/admin/admin.routes";
 import { initializeSocketIO } from "./sockets/index";
+import { connectRedis, disconnectRedis } from "./redis/client";
 
 const app = express();
 const httpServer = createServer(app);
