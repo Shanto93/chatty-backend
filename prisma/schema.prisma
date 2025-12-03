@@ -17,7 +17,7 @@ model User {
   statusMessage String?
   role          Role      @default(USER)
   isOnline      Boolean   @default(false)
-  lastSeen      DateTime? @default(now()) 
+  lastSeen      DateTime? @default(now())
 
   createdRooms Room[]       @relation("CreatedRooms")
   memberships  Membership[]
