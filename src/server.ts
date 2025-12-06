@@ -202,6 +202,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+ app.get("/", (req: Request, res: Response) => {
+    res.json({ message: "Hello World!" });
+  });
+
 // Health check
 app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", message: "Server is running" });
