@@ -1,6 +1,6 @@
+import presenceService from "@/redis-client/presence.service";
 import prisma from "@db/prisma";
-import presenceService from "@redis/presence.service";
-import { DashboardStats, ActiveUserInfo, RoomInfo } from "./admin.types";
+import { ActiveUserInfo, DashboardStats, RoomInfo } from "./admin.types";
 
 export class AdminService {
   async getDashboardStats(): Promise<DashboardStats> {

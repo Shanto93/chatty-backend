@@ -25,8 +25,7 @@
 
 // export default redisClient;
 
-
-// src/redis/client.ts
+// src/redis-client/client.ts
 import { createClient, type RedisClientType } from "redis";
 import config from "@config/index"; // uses your config/index.ts
 

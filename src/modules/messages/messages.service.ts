@@ -1,14 +1,14 @@
+import presenceService from "@/redis-client/presence.service";
+import { getChatGateway } from "@/sockets/index";
 import prisma from "@db/prisma";
-import { NotFoundError, ForbiddenError } from "@utils/errors";
-import {
-  SendMessageDTO,
-  MessageResponse,
-  AttachmentData,
-} from "./messages.types";
-import presenceService from "@redis/presence.service";
 import { Prisma } from "@prisma/client";
 import { uploadToCloudinary } from "@utils/cloudinary.utils";
-import { getChatGateway } from "@/sockets/index";
+import { ForbiddenError, NotFoundError } from "@utils/errors";
+import {
+  AttachmentData,
+  MessageResponse,
+  SendMessageDTO,
+} from "./messages.types";
 
 export class MessagesService {
   private readonly INITIAL_MESSAGES_LIMIT = 15;

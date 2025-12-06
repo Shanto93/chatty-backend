@@ -1,13 +1,13 @@
-import prisma from '@db/prisma';
-import { CreateRoomDTO, UpdateRoomDTO, RoomResponse } from './rooms.types';
-import { NotFoundError, ForbiddenError, ConflictError } from '@utils/errors';
-import presenceService from '@redis/presence.service';
-import { getChatGateway } from '@/sockets/index';
+import presenceService from "@/redis-client/presence.service";
+import { getChatGateway } from "@/sockets/index";
+import prisma from "@db/prisma";
+import { ConflictError, ForbiddenError, NotFoundError } from "@utils/errors";
+import { CreateRoomDTO, RoomResponse, UpdateRoomDTO } from "./rooms.types";
 
 export class RoomsService {
   /*** Create a new room*/
   async createRoom(userId: string, data: CreateRoomDTO): Promise<RoomResponse> {
-    const slug = data.name.toLowerCase().replace(/\s+/g, '-');
+    const slug = data.name.toLowerCase().replace(/\s+/g, "-");
 
     // Check if room with this slug already exists
     const existingRoom = await prisma.room.findUnique({
@@ -15,7 +15,7 @@ export class RoomsService {
     });
 
     if (existingRoom) {
-      throw new ConflictError('A room with this name already exists');
+      throw new ConflictError("A room with this name already exists");
     }
 
     // Create room with creator as first member
@@ -29,7 +29,7 @@ export class RoomsService {
         memberships: {
           create: {
             userId,
-            role: 'CREATOR',
+            role: "CREATOR",
           },
         },
       },
@@ -49,7 +49,7 @@ export class RoomsService {
         const chatGateway = getChatGateway();
         chatGateway.broadcastRoomCreated(room);
       } catch (error) {
-        console.error('Failed to emit room created event:', error);
+        console.error("Failed to emit room created event:", error);
       }
     }
 
@@ -78,16 +78,16 @@ export class RoomsService {
     });
 
     if (!room) {
-      throw new NotFoundError('Room not found');
+      throw new NotFoundError("Room not found");
     }
 
     const membership = room.memberships[0];
     const isMember = !!membership;
-    const isCreator = membership?.role === 'CREATOR';
+    const isCreator = membership?.role === "CREATOR";
 
     // Check access for private rooms
     if (room.isPrivate && !isMember) {
-      throw new ForbiddenError('You do not have access to this private room');
+      throw new ForbiddenError("You do not have access to this private room");
     }
 
     return {
@@ -124,7 +124,7 @@ export class RoomsService {
       },
       orderBy: {
         room: {
-          updatedAt: 'desc',
+          updatedAt: "desc",
         },
       },
     });
@@ -132,7 +132,7 @@ export class RoomsService {
     return memberships.map((membership) => ({
       ...membership.room,
       isMember: true,
-      isCreator: membership.role === 'CREATOR',
+      isCreator: membership.role === "CREATOR",
     }));
   }
 
@@ -154,7 +154,7 @@ export class RoomsService {
         },
       },
       orderBy: {
-        updatedAt: 'desc',
+        updatedAt: "desc",
       },
       take: 50, // Limit to 50 public rooms
     });
@@ -172,7 +172,7 @@ export class RoomsService {
         createdAt: room.createdAt,
         updatedAt: room.updatedAt,
         isMember: !!membership,
-        isCreator: membership?.role === 'CREATOR',
+        isCreator: membership?.role === "CREATOR",
         _count: room._count,
       };
     });
@@ -194,13 +194,13 @@ export class RoomsService {
               {
                 name: {
                   contains: searchTerm,
-                  mode: 'insensitive',
+                  mode: "insensitive",
                 },
               },
               {
                 description: {
                   contains: searchTerm,
-                  mode: 'insensitive',
+                  mode: "insensitive",
                 },
               },
             ],
@@ -231,7 +231,7 @@ export class RoomsService {
         },
       },
       orderBy: {
-        updatedAt: 'desc',
+        updatedAt: "desc",
       },
       take: 20,
     });
@@ -249,14 +249,18 @@ export class RoomsService {
         createdAt: room.createdAt,
         updatedAt: room.updatedAt,
         isMember: !!membership,
-        isCreator: membership?.role === 'CREATOR',
+        isCreator: membership?.role === "CREATOR",
         _count: room._count,
       };
     });
   }
 
   /*** Update room details*/
-  async updateRoom(roomId: string, userId: string, data: UpdateRoomDTO): Promise<RoomResponse> {
+  async updateRoom(
+    roomId: string,
+    userId: string,
+    data: UpdateRoomDTO
+  ): Promise<RoomResponse> {
     // Check if user has permission to update
     const membership = await prisma.membership.findUnique({
       where: {
@@ -267,8 +271,13 @@ export class RoomsService {
       },
     });
 
-    if (!membership || (membership.role !== 'CREATOR' && membership.role !== 'ADMIN')) {
-      throw new ForbiddenError('You do not have permission to update this room');
+    if (
+      !membership ||
+      (membership.role !== "CREATOR" && membership.role !== "ADMIN")
+    ) {
+      throw new ForbiddenError(
+        "You do not have permission to update this room"
+      );
     }
 
     // Prepare update data
@@ -276,7 +285,7 @@ export class RoomsService {
 
     if (data.name) {
       updateData.name = data.name;
-      updateData.slug = data.name.toLowerCase().replace(/\s+/g, '-');
+      updateData.slug = data.name.toLowerCase().replace(/\s+/g, "-");
 
       // Check if new slug is already taken
       const existingRoom = await prisma.room.findFirst({
@@ -287,7 +296,7 @@ export class RoomsService {
       });
 
       if (existingRoom) {
-        throw new ConflictError('A room with this name already exists');
+        throw new ConflictError("A room with this name already exists");
       }
     }
 
@@ -318,13 +327,13 @@ export class RoomsService {
       const chatGateway = getChatGateway();
       chatGateway.emitRoomUpdate(roomId, room);
     } catch (error) {
-      console.error('Failed to emit room update event:', error);
+      console.error("Failed to emit room update event:", error);
     }
 
     return {
       ...room,
       isMember: true,
-      isCreator: membership.role === 'CREATOR',
+      isCreator: membership.role === "CREATOR",
     };
   }
 
@@ -340,8 +349,8 @@ export class RoomsService {
       },
     });
 
-    if (!membership || membership.role !== 'CREATOR') {
-      throw new ForbiddenError('Only the room creator can delete the room');
+    if (!membership || membership.role !== "CREATOR") {
+      throw new ForbiddenError("Only the room creator can delete the room");
     }
 
     // Delete the room (cascade will delete memberships and messages)
@@ -357,22 +366,30 @@ export class RoomsService {
       const chatGateway = getChatGateway();
       chatGateway.broadcastRoomDeleted(roomId);
     } catch (error) {
-      console.error('Failed to emit room deleted event:', error);
+      console.error("Failed to emit room deleted event:", error);
     }
   }
 
   async joinRoom(roomId: string, userId: string): Promise<void> {
     const room = await prisma.room.findUnique({ where: { id: roomId } });
-    if (!room) throw new NotFoundError('Room not found');
+    if (!room) throw new NotFoundError("Room not found");
     if (room.isPrivate)
-      throw new ForbiddenError('Cannot join a private room without an invitation');
+      throw new ForbiddenError(
+        "Cannot join a private room without an invitation"
+      );
     const existingMembership = await prisma.membership.findUnique({
       where: { userId_roomId: { userId, roomId } },
     });
-    if (existingMembership) throw new ConflictError('You are already a member of this room');
+    if (existingMembership)
+      throw new ConflictError("You are already a member of this room");
 
-    await prisma.membership.create({ data: { userId, roomId, role: 'MEMBER' } });
-    await prisma.room.update({ where: { id: roomId }, data: { updatedAt: new Date() } });
+    await prisma.membership.create({
+      data: { userId, roomId, role: "MEMBER" },
+    });
+    await prisma.room.update({
+      where: { id: roomId },
+      data: { updatedAt: new Date() },
+    });
     // SEND SYSTEM JOIN MESSAGE
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -387,7 +404,7 @@ export class RoomsService {
           displayName: user.displayName,
         });
       } catch (error) {
-        console.error('Failed to emit user joined event:', error);
+        console.error("Failed to emit user joined event:", error);
       }
     }
   }
@@ -397,15 +414,20 @@ export class RoomsService {
     const membership = await prisma.membership.findUnique({
       where: { userId_roomId: { userId, roomId } },
     });
-    if (!membership) throw new NotFoundError('You are not a member of this room');
-    if (membership.role === 'CREATOR')
-      throw new ForbiddenError('Room creator cannot leave the room. Delete the room instead.');
+    if (!membership)
+      throw new NotFoundError("You are not a member of this room");
+    if (membership.role === "CREATOR")
+      throw new ForbiddenError(
+        "Room creator cannot leave the room. Delete the room instead."
+      );
     // SEND SYSTEM LEAVE MESSAGE
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, username: true, displayName: true },
     });
-    await prisma.membership.delete({ where: { userId_roomId: { userId, roomId } } });
+    await prisma.membership.delete({
+      where: { userId_roomId: { userId, roomId } },
+    });
     await presenceService.removeUserFromRoom(roomId, userId);
     if (user) {
       try {
@@ -416,13 +438,17 @@ export class RoomsService {
           displayName: user.displayName,
         });
       } catch (error) {
-        console.error('Failed to emit user left event:', error);
+        console.error("Failed to emit user left event:", error);
       }
     }
   }
 
   /*** Add a member to a room (invite)*/
-  async addMember(roomId: string, userId: string, targetUserId: string): Promise<void> {
+  async addMember(
+    roomId: string,
+    userId: string,
+    targetUserId: string
+  ): Promise<void> {
     // Check if requester has permission
     const membership = await prisma.membership.findUnique({
       where: {
@@ -433,8 +459,11 @@ export class RoomsService {
       },
     });
 
-    if (!membership || (membership.role !== 'CREATOR' && membership.role !== 'ADMIN')) {
-      throw new ForbiddenError('You do not have permission to add members');
+    if (
+      !membership ||
+      (membership.role !== "CREATOR" && membership.role !== "ADMIN")
+    ) {
+      throw new ForbiddenError("You do not have permission to add members");
     }
 
     // Check if target user exists
@@ -443,7 +472,7 @@ export class RoomsService {
     });
 
     if (!targetUser) {
-      throw new NotFoundError('User not found');
+      throw new NotFoundError("User not found");
     }
 
     // Check if target user is already a member
@@ -457,7 +486,7 @@ export class RoomsService {
     });
 
     if (existingMembership) {
-      throw new ConflictError('User is already a member of this room');
+      throw new ConflictError("User is already a member of this room");
     }
 
     // Add member
@@ -465,7 +494,7 @@ export class RoomsService {
       data: {
         userId: targetUserId,
         roomId,
-        role: 'MEMBER',
+        role: "MEMBER",
       },
     });
 
@@ -479,7 +508,11 @@ export class RoomsService {
   /**
    * Remove a member from a room
    */
-  async removeMember(roomId: string, userId: string, targetUserId: string): Promise<void> {
+  async removeMember(
+    roomId: string,
+    userId: string,
+    targetUserId: string
+  ): Promise<void> {
     // Check if requester has permission
     const membership = await prisma.membership.findUnique({
       where: {
@@ -490,8 +523,11 @@ export class RoomsService {
       },
     });
 
-    if (!membership || (membership.role !== 'CREATOR' && membership.role !== 'ADMIN')) {
-      throw new ForbiddenError('You do not have permission to remove members');
+    if (
+      !membership ||
+      (membership.role !== "CREATOR" && membership.role !== "ADMIN")
+    ) {
+      throw new ForbiddenError("You do not have permission to remove members");
     }
 
     // Check if target user is a member
@@ -505,17 +541,17 @@ export class RoomsService {
     });
 
     if (!targetMembership) {
-      throw new NotFoundError('User is not a member of this room');
+      throw new NotFoundError("User is not a member of this room");
     }
 
     // Cannot remove the creator
-    if (targetMembership.role === 'CREATOR') {
-      throw new ForbiddenError('Cannot remove the room creator');
+    if (targetMembership.role === "CREATOR") {
+      throw new ForbiddenError("Cannot remove the room creator");
     }
 
     // Admin cannot remove another admin unless requester is creator
-    if (targetMembership.role === 'ADMIN' && membership.role !== 'CREATOR') {
-      throw new ForbiddenError('Only the creator can remove admins');
+    if (targetMembership.role === "ADMIN" && membership.role !== "CREATOR") {
+      throw new ForbiddenError("Only the creator can remove admins");
     }
 
     // Remove membership
@@ -545,13 +581,13 @@ export class RoomsService {
     });
 
     if (!room) {
-      throw new NotFoundError('Room not found');
+      throw new NotFoundError("Room not found");
     }
 
     const isMember = room.memberships.length > 0;
 
     if (room.isPrivate && !isMember) {
-      throw new ForbiddenError('You do not have access to this private room');
+      throw new ForbiddenError("You do not have access to this private room");
     }
 
     // Get all members
@@ -569,8 +605,8 @@ export class RoomsService {
         },
       },
       orderBy: [
-        { role: 'asc' }, // CREATOR first, then ADMIN, then MEMBER
-        { joinedAt: 'asc' },
+        { role: "asc" }, // CREATOR first, then ADMIN, then MEMBER
+        { joinedAt: "asc" },
       ],
     });
 
@@ -589,7 +625,7 @@ export class RoomsService {
     roomId: string,
     userId: string,
     targetUserId: string,
-    newRole: 'ADMIN' | 'MEMBER',
+    newRole: "ADMIN" | "MEMBER"
   ): Promise<void> {
     // Check if requester is the creator
     const membership = await prisma.membership.findUnique({
@@ -601,8 +637,8 @@ export class RoomsService {
       },
     });
 
-    if (!membership || membership.role !== 'CREATOR') {
-      throw new ForbiddenError('Only the room creator can change member roles');
+    if (!membership || membership.role !== "CREATOR") {
+      throw new ForbiddenError("Only the room creator can change member roles");
     }
 
     // Check if target user is a member
@@ -616,11 +652,11 @@ export class RoomsService {
     });
 
     if (!targetMembership) {
-      throw new NotFoundError('User is not a member of this room');
+      throw new NotFoundError("User is not a member of this room");
     }
 
     // Cannot change creator's role
-    if (targetMembership.role === 'CREATOR') {
+    if (targetMembership.role === "CREATOR") {
       throw new ForbiddenError("Cannot change the creator's role");
     }
 
